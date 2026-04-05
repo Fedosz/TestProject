@@ -234,7 +234,7 @@ func TestService_GetRates(t *testing.T) {
 				tt.prepare(exchangeClient, rateRepository)
 			}
 
-			service := NewService(exchangeClient, rateRepository)
+			service := NewService(exchangeClient, rateRepository, nil)
 
 			rate, err := service.GetRates(
 				context.Background(),
@@ -273,7 +273,7 @@ func TestService_GetRates_SetsCurrentTimestamp(t *testing.T) {
 		return nil
 	})
 
-	service := NewService(exchangeClient, rateRepository)
+	service := NewService(exchangeClient, rateRepository, nil)
 
 	rate, err := service.GetRates(
 		context.Background(),

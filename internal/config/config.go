@@ -8,11 +8,17 @@ import (
 
 type Config struct {
 	GRPC     GRPCConfig
+	HTTP     HTTPConfig
 	Postgres PostgresConfig
 	Grinex   GrinexConfig
 }
 
 type GRPCConfig struct {
+	Host string
+	Port int
+}
+
+type HTTPConfig struct {
 	Host string
 	Port int
 }
@@ -36,6 +42,9 @@ func MustLoad() *Config {
 	grpcHost := flag.String("grpc-host", getEnv("GRPC_HOST", "0.0.0.0"), "gRPC server host")
 	grpcPort := flag.Int("grpc-port", getEnvAsInt("GRPC_PORT", 50051), "gRPC server port")
 
+	httpHost := flag.String("http-host", getEnv("HTTP_HOST", "0.0.0.0"), "HTTP server host")
+	httpPort := flag.Int("http-port", getEnvAsInt("HTTP_PORT", 2112), "HTTP server port")
+
 	postgresHost := flag.String("postgres-host", getEnv("POSTGRES_HOST", "localhost"), "PostgreSQL host")
 	postgresPort := flag.Int("postgres-port", getEnvAsInt("POSTGRES_PORT", 5432), "PostgreSQL port")
 	postgresUser := flag.String("postgres-user", getEnv("POSTGRES_USER", "postgres"), "PostgreSQL user")
@@ -53,6 +62,10 @@ func MustLoad() *Config {
 		GRPC: GRPCConfig{
 			Host: *grpcHost,
 			Port: *grpcPort,
+		},
+		HTTP: HTTPConfig{
+			Host: *httpHost,
+			Port: *httpPort,
 		},
 		Postgres: PostgresConfig{
 			Host:     *postgresHost,

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"rates_project/internal/domain/models"
+	"rates_project/internal/metrics"
 )
 
 type ExchangeClient interface {
@@ -15,13 +16,19 @@ type RateRepository interface {
 }
 
 type Service struct {
-	client ExchangeClient
-	repo   RateRepository
+	client  ExchangeClient
+	repo    RateRepository
+	metrics *metrics.Metrics
 }
 
-func NewService(client ExchangeClient, repo RateRepository) *Service {
+func NewService(
+	client ExchangeClient,
+	repo RateRepository,
+	metrics *metrics.Metrics,
+) *Service {
 	return &Service{
-		client: client,
-		repo:   repo,
+		client:  client,
+		repo:    repo,
+		metrics: metrics,
 	}
 }

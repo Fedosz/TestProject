@@ -2,7 +2,6 @@ package telemetry
 
 import (
 	"context"
-	"io"
 
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -18,7 +17,7 @@ func (t *tracerProvider) Close() error {
 	return t.Shutdown(context.Background())
 }
 
-func newTracerProvider(ctx context.Context, serviceName string) (io.Closer, error) {
+func newTracerProvider(ctx context.Context, serviceName string) (*tracerProvider, error) {
 	exporter, err := stdouttrace.New(
 		stdouttrace.WithPrettyPrint(),
 	)

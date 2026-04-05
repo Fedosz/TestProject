@@ -17,18 +17,40 @@ func (s *Service) GetRates(
 	ctx, span := telemetry.Tracer("rates_service").Start(ctx, "rates.GetRates")
 	defer span.End()
 
+	startedAt := time.Now()
+
+	if s.metrics != nil {
+		s.metrics.GetRatesRequestsTotal.Inc()
+
+		defer func() {
+			s.metrics.GetRatesDuration.Observe(time.Since(startedAt).Seconds())
+		}()
+	}
+
 	asks, bids, err := s.client.GetRates(ctx)
 	if err != nil {
+		if s.metrics != nil {
+			s.metrics.GetRatesErrorsTotal.Inc()
+		}
+
 		return nil, err
 	}
 
 	ask, err := s.calculate(asks, askParams)
 	if err != nil {
+		if s.metrics != nil {
+			s.metrics.GetRatesErrorsTotal.Inc()
+		}
+
 		return nil, err
 	}
 
 	bid, err := s.calculate(bids, bidParams)
 	if err != nil {
+		if s.metrics != nil {
+			s.metrics.GetRatesErrorsTotal.Inc()
+		}
+
 		return nil, err
 	}
 
@@ -39,7 +61,16 @@ func (s *Service) GetRates(
 	}
 
 	if err = s.repo.Create(ctx, rate); err != nil {
+		if s.metrics != nil {
+			s.metrics.GetRatesErrorsTotal.Inc()
+		}
+
 		return nil, err
+	}
+
+	if s.metrics != nil {
+		s.metrics.LastAsk.Set(rate.Ask)
+		s.metrics.LastBid.Set(rate.Bid)
 	}
 
 	return rate, nil

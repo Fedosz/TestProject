@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -15,8 +16,13 @@ func Migrate(db *sql.DB, migrationsPath string) error {
 		return err
 	}
 
+	absPath, err := filepath.Abs(migrationsPath)
+	if err != nil {
+		return err
+	}
+
 	m, err := migrate.NewWithDatabaseInstance(
-		fmt.Sprintf("file://%s", migrationsPath),
+		fmt.Sprintf("file://%s", absPath),
 		"postgres",
 		driver,
 	)

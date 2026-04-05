@@ -11,10 +11,14 @@ RUN go build -o app ./cmd/app
 
 FROM debian:bookworm-slim
 
-WORKDIR /root/
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
 
 COPY --from=builder /app/app ./app
+COPY --from=builder /app/migrations ./migrations
 
 EXPOSE 50051
+EXPOSE 2112
 
 CMD ["./app"]

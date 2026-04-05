@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"rates_project/internal/logger"
 
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
@@ -22,24 +22,26 @@ import (
 	dbRate "rates_project/internal/db/rate"
 	grpcHealth "rates_project/internal/grpc/health"
 	grpcRates "rates_project/internal/grpc/rates"
+	"rates_project/internal/logger"
+	"rates_project/internal/metrics"
 	"rates_project/internal/rates"
 	"rates_project/internal/telemetry"
 	ratesv1 "rates_project/usdt-rates/gen/proto/rates/v1"
 )
 
 func main() {
-	cfg := config.MustLoad()
-
-	ctx := context.Background()
-
 	log := logger.MustNew()
 	defer func() {
 		_ = log.Sync()
 	}()
 
+	cfg := config.MustLoad()
+
+	ctx := context.Background()
+
 	tel, err := telemetry.Init(ctx, "rates_project")
 	if err != nil {
-		log.Fatal("failed to init telemetry: %v", zap.Error(err))
+		log.Fatal("failed to init telemetry", zap.Error(err))
 	}
 
 	defer func() {
@@ -60,9 +62,21 @@ func main() {
 		_ = postgresDB.Close()
 	}()
 
-	if err = db.Migrate(postgresDB, "migrations"); err != nil {
+	if err = db.Migrate(postgresDB, "./migrations"); err != nil {
 		log.Fatal("failed to run migrations", zap.Error(err))
 	}
+
+	appMetrics := metrics.MustNew()
+	metricsAddress := fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port)
+	metricsServer := metrics.NewServer(metricsAddress)
+
+	go func() {
+		log.Info("metrics server started", zap.String("address", metricsAddress))
+
+		if err = metricsServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal("failed to serve metrics", zap.Error(err))
+		}
+	}()
 
 	rateRepo := dbRate.NewRepo(postgresDB)
 
@@ -72,7 +86,7 @@ func main() {
 		cfg.Grinex.Timeout,
 	)
 
-	ratesService := rates.NewService(grinexClient, rateRepo)
+	ratesService := rates.NewService(grinexClient, rateRepo, appMetrics)
 	healthService := appHealth.NewService(rateRepo)
 
 	ratesHandler := grpcRates.NewHandler(ratesService)
@@ -124,6 +138,13 @@ func main() {
 	case <-time.After(5 * time.Second):
 		log.Warn("gRPC graceful stop timeout exceeded")
 		grpcServer.Stop()
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err = metricsServer.Shutdown(shutdownCtx); err != nil {
+		log.Warn("failed to shutdown metrics server", zap.Error(err))
 	}
 }
 
