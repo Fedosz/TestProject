@@ -2,9 +2,10 @@ package rates
 
 import (
 	"context"
+	"time"
+
 	"rates_project/internal/domain/models"
 	"rates_project/internal/domain/types"
-	"time"
 )
 
 func (s *Service) GetRates(
@@ -12,17 +13,17 @@ func (s *Service) GetRates(
 	askParams models.CalculationParams,
 	bidParams models.CalculationParams,
 ) (*models.Rate, error) {
-	values, err := s.client.GetRates(ctx)
+	asks, bids, err := s.client.GetRates(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ask, err := s.calculate(values, askParams)
+	ask, err := s.calculate(asks, askParams)
 	if err != nil {
 		return nil, err
 	}
 
-	bid, err := s.calculate(values, bidParams)
+	bid, err := s.calculate(bids, bidParams)
 	if err != nil {
 		return nil, err
 	}

@@ -2,11 +2,12 @@ package rates
 
 import (
 	"context"
+
 	"rates_project/internal/domain/models"
 )
 
 type ExchangeClient interface {
-	GetRates(ctx context.Context) ([]float64, error)
+	GetRates(ctx context.Context) ([]float64, []float64, error)
 }
 
 type RateRepository interface {
