@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package rates.v1;
+
+option go_package = "usdt-rates/gen/proto/rates/v1;ratesv1";
+
+service RatesService {
+  rpc GetRates(GetRatesRequest) returns (GetRatesResponse);
+}
+
+service HealthService {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+enum CalcMethod {
+  CALC_METHOD_UNSPECIFIED = 0;
+  CALC_METHOD_TOP_N = 1;
+  CALC_METHOD_AVG_NM = 2;
+}
+
+message CalculationParams {
+  CalcMethod method = 1;
+  uint32 n = 2;
+  uint32 m = 3;
+}
+
+message GetRatesRequest {
+  CalculationParams ask = 1;
+  CalculationParams bid = 2;
+}
+
+message GetRatesResponse {
+  double ask = 1;
+  double bid = 2;
+  int64 timestamp_unix = 3;
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+}
