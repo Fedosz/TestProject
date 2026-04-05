@@ -16,6 +16,7 @@ import (
 	appHealth "rates_project/internal/app/health"
 	"rates_project/internal/client/grinex"
 	"rates_project/internal/config"
+	"rates_project/internal/db"
 	dbRate "rates_project/internal/db/rate"
 	grpcHealth "rates_project/internal/grpc/health"
 	grpcRates "rates_project/internal/grpc/rates"
@@ -26,16 +27,20 @@ import (
 func main() {
 	cfg := config.MustLoad()
 
-	db, err := newPostgresDB(cfg)
+	postgresDB, err := newPostgresDB(cfg)
 	if err != nil {
 		log.Fatalf("failed to connect to postgres: %v", err)
 	}
 
 	defer func() {
-		_ = db.Close()
+		_ = postgresDB.Close()
 	}()
 
-	rateRepo := dbRate.NewRepo(db)
+	if err = db.Migrate(postgresDB, "migrations"); err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
+	}
+
+	rateRepo := dbRate.NewRepo(postgresDB)
 
 	grinexClient := grinex.NewClient(
 		cfg.Grinex.BaseURL,

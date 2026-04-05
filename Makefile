@@ -1,12 +1,5 @@
 APP_NAME=app
 
-proto:
-	protoc \
-		--proto_path=api \
-		--go_out=. \
-		--go-grpc_out=. \
-		api/rates.proto
-
 build:
 	go build -o $(APP_NAME) ./cmd/app
 
@@ -21,3 +14,10 @@ lint:
 
 docker-build:
 	docker build -t rates_project:latest .
+
+proto:
+	protoc \
+		--proto_path=api \
+		--go_out=. \
+		--go-grpc_out=. \
+		api/rates.proto
