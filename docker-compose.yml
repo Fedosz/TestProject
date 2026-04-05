@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: rates_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rates
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: rates_app
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rates
+      POSTGRES_SSLMODE: disable
+      GRPC_HOST: 0.0.0.0
+      GRPC_PORT: 50051
+      GRINEX_BASE_URL: https://grinex.io
+      GRINEX_PATH: /api/v1/spot/depth?symbol=usdta7a5
+      GRINEX_TIMEOUT: 5s
+    ports:
+      - "50051:50051"
+
+volumes:
+  postgres_data:
