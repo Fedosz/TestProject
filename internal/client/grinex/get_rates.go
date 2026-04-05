@@ -3,9 +3,14 @@ package grinex
 import (
 	"context"
 	"strconv"
+
+	"rates_project/internal/telemetry"
 )
 
 func (c *Client) GetRates(ctx context.Context) ([]float64, []float64, error) {
+	ctx, span := telemetry.Tracer("grinex_client").Start(ctx, "grinex.GetRates")
+	defer span.End()
+
 	var response DepthResponse
 
 	_, err := c.client.R().

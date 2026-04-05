@@ -21,3 +21,7 @@ proto:
 		--go_out=. \
 		--go-grpc_out=. \
 		api/rates.proto
+
+mocks:
+	minimock -i rates_project/internal/rates.ExchangeClient,rates_project/internal/rates.RateRepository -o ./internal/rates/mocks -s "_mock.go"
+	minimock -i rates_project/internal/app/health.Pinger -o ./internal/app/health/mocks -s "_mock.go"

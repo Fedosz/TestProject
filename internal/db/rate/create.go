@@ -4,9 +4,13 @@ import (
 	"context"
 
 	"rates_project/internal/domain/models"
+	"rates_project/internal/telemetry"
 )
 
 func (r *Repo) Create(ctx context.Context, rate *models.Rate) error {
+	ctx, span := telemetry.Tracer("rate_repo").Start(ctx, "rate_repo.Create")
+	defer span.End()
+
 	query := `
 		INSERT INTO rates (
 			ask,

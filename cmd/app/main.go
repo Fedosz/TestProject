@@ -21,11 +21,28 @@ import (
 	grpcHealth "rates_project/internal/grpc/health"
 	grpcRates "rates_project/internal/grpc/rates"
 	"rates_project/internal/rates"
+	"rates_project/internal/telemetry"
 	ratesv1 "rates_project/usdt-rates/gen/proto/rates/v1"
 )
 
 func main() {
 	cfg := config.MustLoad()
+
+	ctx := context.Background()
+
+	tel, err := telemetry.Init(ctx, "rates_project")
+	if err != nil {
+		log.Fatalf("failed to init telemetry: %v", err)
+	}
+
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err = tel.Shutdown(shutdownCtx); err != nil {
+			log.Printf("failed to shutdown telemetry: %v", err)
+		}
+	}()
 
 	postgresDB, err := newPostgresDB(cfg)
 	if err != nil {
@@ -54,7 +71,9 @@ func main() {
 	ratesHandler := grpcRates.NewHandler(ratesService)
 	healthHandler := grpcHealth.NewHandler(healthService)
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.StatsHandler(telemetry.ServerStatsHandler()),
+	)
 
 	ratesv1.RegisterRatesServiceServer(grpcServer, ratesHandler)
 	ratesv1.RegisterHealthServiceServer(grpcServer, healthHandler)
@@ -66,7 +85,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	ctx, stop := signal.NotifyContext(
+	stopCtx, stop := signal.NotifyContext(
 		context.Background(),
 		syscall.SIGINT,
 		syscall.SIGTERM,
@@ -81,7 +100,7 @@ func main() {
 		}
 	}()
 
-	<-ctx.Done()
+	<-stopCtx.Done()
 
 	log.Println("shutdown signal received")
 

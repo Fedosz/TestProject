@@ -6,6 +6,7 @@ import (
 
 	"rates_project/internal/domain/models"
 	"rates_project/internal/domain/types"
+	"rates_project/internal/telemetry"
 )
 
 func (s *Service) GetRates(
@@ -13,6 +14,9 @@ func (s *Service) GetRates(
 	askParams models.CalculationParams,
 	bidParams models.CalculationParams,
 ) (*models.Rate, error) {
+	ctx, span := telemetry.Tracer("rates_service").Start(ctx, "rates.GetRates")
+	defer span.End()
+
 	asks, bids, err := s.client.GetRates(ctx)
 	if err != nil {
 		return nil, err
