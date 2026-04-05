@@ -4,13 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"net"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"rates_project/internal/logger"
+
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	appHealth "rates_project/internal/app/health"
@@ -30,9 +32,14 @@ func main() {
 
 	ctx := context.Background()
 
+	log := logger.MustNew()
+	defer func() {
+		_ = log.Sync()
+	}()
+
 	tel, err := telemetry.Init(ctx, "rates_project")
 	if err != nil {
-		log.Fatalf("failed to init telemetry: %v", err)
+		log.Fatal("failed to init telemetry: %v", zap.Error(err))
 	}
 
 	defer func() {
@@ -40,13 +47,13 @@ func main() {
 		defer cancel()
 
 		if err = tel.Shutdown(shutdownCtx); err != nil {
-			log.Printf("failed to shutdown telemetry: %v", err)
+			log.Warn("failed to shutdown telemetry", zap.Error(err))
 		}
 	}()
 
 	postgresDB, err := newPostgresDB(cfg)
 	if err != nil {
-		log.Fatalf("failed to connect to postgres: %v", err)
+		log.Fatal("failed to connect to postgres", zap.Error(err))
 	}
 
 	defer func() {
@@ -54,7 +61,7 @@ func main() {
 	}()
 
 	if err = db.Migrate(postgresDB, "migrations"); err != nil {
-		log.Fatalf("failed to run migrations: %v", err)
+		log.Fatal("failed to run migrations", zap.Error(err))
 	}
 
 	rateRepo := dbRate.NewRepo(postgresDB)
@@ -82,7 +89,7 @@ func main() {
 
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Fatal("failed to listen", zap.Error(err))
 	}
 
 	stopCtx, stop := signal.NotifyContext(
@@ -93,16 +100,16 @@ func main() {
 	defer stop()
 
 	go func() {
-		log.Printf("gRPC server started on %s", address)
+		log.Info("gRPC server started", zap.String("address", address))
 
 		if err = grpcServer.Serve(listener); err != nil {
-			log.Fatalf("failed to serve gRPC: %v", err)
+			log.Fatal("failed to serve gRPC", zap.Error(err))
 		}
 	}()
 
 	<-stopCtx.Done()
 
-	log.Println("shutdown signal received")
+	log.Info("shutdown signal received")
 
 	stopped := make(chan struct{})
 
@@ -113,9 +120,9 @@ func main() {
 
 	select {
 	case <-stopped:
-		log.Println("gRPC server stopped gracefully")
+		log.Info("gRPC server stopped gracefully")
 	case <-time.After(5 * time.Second):
-		log.Println("gRPC graceful stop timeout exceeded")
+		log.Warn("gRPC graceful stop timeout exceeded")
 		grpcServer.Stop()
 	}
 }
