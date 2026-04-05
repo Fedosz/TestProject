@@ -12,10 +12,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (h *Handler) GetRates(
-	ctx context.Context,
-	req *ratesv1.GetRatesRequest,
-) (*ratesv1.GetRatesResponse, error) {
+// GetRates return current rates
+func (h *Handler) GetRates(ctx context.Context, req *ratesv1.GetRatesRequest) (*ratesv1.GetRatesResponse, error) {
 	askParams := mapCalculationParams(req.GetAsk())
 	bidParams := mapCalculationParams(req.GetBid())
 

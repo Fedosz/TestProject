@@ -30,20 +30,24 @@ import (
 )
 
 func main() {
+	// logger
 	log := logger.MustNew()
 	defer func() {
 		_ = log.Sync()
 	}()
 
+	// config
 	cfg := config.MustLoad()
 
 	ctx := context.Background()
 
+	// telemetry
 	tel, err := telemetry.Init(ctx, "rates_project")
 	if err != nil {
 		log.Fatal("failed to init telemetry", zap.Error(err))
 	}
 
+	// graceful shutdown
 	defer func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -53,6 +57,7 @@ func main() {
 		}
 	}()
 
+	// database
 	postgresDB, err := newPostgresDB(cfg)
 	if err != nil {
 		log.Fatal("failed to connect to postgres", zap.Error(err))
@@ -62,10 +67,12 @@ func main() {
 		_ = postgresDB.Close()
 	}()
 
+	// migrations
 	if err = db.Migrate(postgresDB, "./migrations"); err != nil {
 		log.Fatal("failed to run migrations", zap.Error(err))
 	}
 
+	// metrics init
 	appMetrics := metrics.MustNew()
 	metricsAddress := fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port)
 	metricsServer := metrics.NewServer(metricsAddress)
@@ -80,6 +87,7 @@ func main() {
 
 	rateRepo := dbRate.NewRepo(postgresDB)
 
+	// external client
 	grinexClient := grinex.NewClient(
 		cfg.Grinex.BaseURL,
 		cfg.Grinex.Path,
@@ -148,6 +156,7 @@ func main() {
 	}
 }
 
+// Initialize database
 func newPostgresDB(cfg *config.Config) (*sql.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",

@@ -7,6 +7,7 @@ import (
 	"rates_project/internal/telemetry"
 )
 
+// GetRates get current rates
 func (c *Client) GetRates(ctx context.Context) ([]float64, []float64, error) {
 	ctx, span := telemetry.Tracer("grinex_client").Start(ctx, "grinex.GetRates")
 	defer span.End()

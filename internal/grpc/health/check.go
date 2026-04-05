@@ -9,10 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (h *Handler) Check(
-	ctx context.Context,
-	_ *ratesv1.HealthCheckRequest,
-) (*ratesv1.HealthCheckResponse, error) {
+// Check checks service health
+func (h *Handler) Check(ctx context.Context, _ *ratesv1.HealthCheckRequest) (*ratesv1.HealthCheckResponse, error) {
 	err := h.service.Check(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, err.Error())

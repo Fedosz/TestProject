@@ -1,5 +1,6 @@
 package rates
 
+// calcAvgNM returns average value [N, M]
 func (s *Service) calcAvgNM(values []float64, n, m int) (float64, error) {
 	if len(values) == 0 {
 		return 0, ErrEmptyValues

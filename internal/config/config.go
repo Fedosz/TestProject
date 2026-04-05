@@ -38,6 +38,7 @@ type GrinexConfig struct {
 	Timeout time.Duration
 }
 
+// MustLoad init config
 func MustLoad() *Config {
 	grpcHost := flag.String("grpc-host", getEnv("GRPC_HOST", "0.0.0.0"), "gRPC server host")
 	grpcPort := flag.Int("grpc-port", getEnvAsInt("GRPC_PORT", 50051), "gRPC server port")

@@ -9,11 +9,8 @@ import (
 	"rates_project/internal/telemetry"
 )
 
-func (s *Service) GetRates(
-	ctx context.Context,
-	askParams models.CalculationParams,
-	bidParams models.CalculationParams,
-) (*models.Rate, error) {
+// GetRates returns current rates
+func (s *Service) GetRates(ctx context.Context, askParams models.CalculationParams, bidParams models.CalculationParams) (*models.Rate, error) {
 	ctx, span := telemetry.Tracer("rates_service").Start(ctx, "rates.GetRates")
 	defer span.End()
 

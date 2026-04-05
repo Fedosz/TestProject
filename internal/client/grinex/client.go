@@ -11,6 +11,7 @@ type Client struct {
 	path   string
 }
 
+// NewClient Creates new grinex client
 func NewClient(baseURL, path string, timeout time.Duration) *Client {
 	httpClient := resty.New().
 		SetBaseURL(baseURL).

@@ -7,6 +7,7 @@ import (
 	"rates_project/internal/telemetry"
 )
 
+// Create creates rates info row
 func (r *Repo) Create(ctx context.Context, rate *models.Rate) error {
 	ctx, span := telemetry.Tracer("rate_repo").Start(ctx, "rate_repo.Create")
 	defer span.End()
